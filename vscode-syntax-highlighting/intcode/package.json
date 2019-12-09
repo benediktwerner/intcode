@@ -1,0 +1,25 @@
+{
+    "name": "intcode",
+    "displayName": "intcode",
+    "description": "Syntax highlighting for intcode",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.40.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "intcode",
+            "aliases": ["intcode"],
+            "extensions": [".ic"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "intcode",
+            "scopeName": "source.intcode",
+            "path": "./syntaxes/intcode.tmLanguage.json"
+        }]
+    }
+}

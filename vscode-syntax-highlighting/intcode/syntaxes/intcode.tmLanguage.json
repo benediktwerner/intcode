@@ -1,0 +1,235 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "intcode",
+  "patterns": [{ "include": "#statement" }, { "include": "#expression" }],
+  "repository": {
+    "statement": {
+      "patterns": [
+        { "include": "#function-declaration" },
+        { "include": "#statement-keyword" },
+        { "include": "#assignment-operator" }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.intcode",
+          "match": "//.*"
+        }
+      ]
+    },
+    "statement-keyword": {
+      "patterns": [
+        {
+          "name": "storage.type.function.intcode",
+          "match": "\\b(func)\\b"
+        },
+        {
+          "name": "keyword.control.flow.intcode",
+          "match": "\\b(if|while|for|return)\\b"
+        },
+        {
+          "name": "storage.modifier.declaration.intcode",
+          "match": "\\b(var|const)\\b"
+        }
+      ]
+    },
+    "expression-bare": {
+      "patterns": [
+        { "include": "#literal" },
+        { "include": "#string" },
+        { "include": "#illegal-operator" },
+        { "include": "#operator" },
+        { "include": "#round-braces" },
+        { "include": "#function-call" },
+        { "include": "#builtin-functions" },
+        { "include": "#illegal-names" },
+        { "include": "#constants" }
+      ]
+    },
+    "expression": {
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#expression-bare" }
+      ]
+    },
+    "constants": {
+      "name": "constant.other.caps.intcode",
+      "match": "(?x)\\b(_* [[:upper:]] [_\\d]* [[:upper:]]) [[:upper:]\\d]* (_\\w*)?\\b"
+    },
+    "round-braces": {
+      "begin": "(\\()",
+      "end": "(\\))",
+      "beginCaptures": {
+        "1": { "name": "punctuation.parenthesis.begin.intcode" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.parenthesis.end.intcode" }
+      },
+      "patterns": [{ "include": "#expression" }]
+    },
+    "assignment-operator": {
+      "name": "keyword.operator.assignment.intcode",
+      "match": "=(?!=)"
+    },
+    "operator": {
+      "match": "(?x)\\b(and | or | not | in | is)(?!\\s*:)\b | (<< | >> | & | \\| | \\^ | ~) | (\\*\\* | \\* | \\+ | - | % | /) | (!= | == | >= | <= | < | >)",
+      "captures": {
+        "1": { "name": "keyword.operator.logical.intcode" },
+        "2": { "name": "keyword.operator.bitwise.intcode" },
+        "3": { "name": "keyword.operator.arithmetic.intcode" },
+        "4": { "name": "keyword.operator.comparison.intcode" }
+      }
+    },
+    "literal": {
+      "patterns": [
+        { "name": "constant.language.intcode", "match": "\\b(true|false)\\b" },
+        { "include": "#number" }
+      ]
+    },
+    "number": {
+      "name": "constant.numeric.intcode",
+      "patterns": [
+        { "include": "#number-dec" },
+        { "include": "#number-hex" },
+        { "include": "#number-oct" },
+        { "include": "#number-bin" },
+        { "name": "invalid.illegal.name.intcode", "match": "\\b[0-9]+\\w+" }
+      ]
+    },
+    "number-dec": {
+      "name": "constant.numeric.dec.intcode",
+      "match": "(?<![\\w\\.])[0-9](_?[0-9])*\\b"
+    },
+    "number-hex": {
+      "name": "constant.numeric.hex.intcode",
+      "match": "(?<![\\w\\.])(0[xX])(_?[0-9a-fA-F])+\\b",
+      "captures": { "1": { "name": "storage.type.number" } }
+    },
+    "number-oct": {
+      "name": "constant.numeric.hex.intcode",
+      "match": "(?<![\\w\\.])(0[oO])(_?[0-7])+\\b",
+      "captures": { "1": { "name": "storage.type.number" } }
+    },
+    "number-bin": {
+      "name": "constant.numeric.bin.intcode",
+      "match": "(?<![\\w\\.])(0[bB])(_?[01])+\\b",
+      "captures": { "1": { "name": "storage.type.number" } }
+    },
+    "string": {
+      "name": "string.quoted.double.intcode",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.intcode",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "function-declaration": {
+      "name": "meta.function.intcode",
+      "begin": "\\s*(func)\\s+(?= [[:alpha:]_][[:word:]]*\\s*\\()",
+      "end": "{",
+      "beginCaptures": { "1": { "name": "storage.type.function.intcode" } },
+      "patterns": [
+        { "include": "#function-declaration-name" },
+        { "include": "#parameters" }
+      ]
+    },
+    "function-declaration-name": {
+      "patterns": [
+        { "include": "#illegal-names" },
+        {
+          "name": "entity.name.function.intcode",
+          "match": "\\b([[:alpha:]_]\\w*)\\b"
+        }
+      ]
+    },
+    "parameters": {
+      "name": "meta.function.parameters.intcode",
+      "begin": "(\\()",
+      "end": "(\\))",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.parameters.begin.intcode" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.parameters.end.intcode" }
+      },
+      "patterns": [
+        { "include": "#illegal-names" },
+        {
+          "match": "(?x) ([[:alpha:]_]\\w*)\\s* (?: (,) | (?=[)\n]))",
+          "captures": {
+            "1": { "name": "variable.parameter.function.language.intcode" },
+            "2": { "name": "punctuation.seperator.parameters.intcode" }
+          }
+        }
+      ]
+    },
+    "function-call": {
+      "name": "meta.function-call.intcode",
+      "begin": "\\b(?=([[:alpha:]_]\\w*)\\s*(\\())",
+      "end": "(\\))",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.arguments.end.intcode" }
+      },
+      "patterns": [
+        { "include": "#function-name" },
+        { "include": "#function-arguments" }
+      ]
+    },
+    "function-name": {
+      "patterns": [
+        { "include": "#builtin-functions" },
+        {
+          "name": "entity.name.function.intcode",
+          "match": "\\b([[:alpha:]_]\\w*)\\b"
+        }
+      ]
+    },
+    "function-arguments": {
+      "begin": "(\\()",
+      "end": "(?=\\))(?!\\)\\s*\\()",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.arguments.begin.intcode" }
+      },
+      "contentName": "meta.function-call.arguments.intcode",
+      "patterns": [
+        { "name": "punctuation.seperator.arguments.intcode", "match": "(,)" },
+        { "include": "#illegal-names" },
+        { "include": "#expression" },
+        {
+          "match": "\\s*(\\))\\s*(\\()",
+          "captures": {
+            "1": { "name": "punctuation.definition.arguments.end.intcode" },
+            "2": { "name": "punctuation.definition.arguments.begin.intcode" }
+          }
+        }
+      ]
+    },
+    "builtin-functions": {
+      "patterns": [
+        { "include": "#illegal-names" },
+        {
+          "name": "support.function.builtin.intcode",
+          "match": "\\b(print|input)\\b"
+        }
+      ]
+    },
+    "illegal-names": {
+      "name": "keyword.control.flow.intcode",
+      "match": "\\b(and | const | func | else | for | if | in | is | not | or | return | var | while)\\b"
+    },
+    "illegal-operator": {
+      "patterns": [
+        {
+          "name": "invalid.illegal.operator.intcode",
+          "match": "&&|\\|\\||--|\\+\\+|[?$]"
+        },
+        { "name": "invalid.illegal.operator.intcode", "match": "!\\b" }
+      ]
+    }
+  },
+  "scopeName": "source.intcode"
+}

@@ -547,8 +547,8 @@ impl Assembler {
                     [label self "__ret"],
                 ),
             Ret => assemble!(self,
-                [pop "__ip"],
-                [jmp "__ip"],
+                [add_rel_base (-1)],
+                [jmp (rel 0)],
             ),
 
             Mov(a, b) => assemble!(self, [add a 0 b]),

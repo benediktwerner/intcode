@@ -19,7 +19,9 @@ pub struct Function {
 pub enum Stmt {
     Decl(Ident),
     DeclAssign(Ident, Expr),
+    DeclArray(Ident, u32),
     Assign(Ident, Expr),
+    AssignIndex(Ident, Expr, Expr),
     Block(Vec<Stmt>),
     If(Expr, Box<Stmt>),
     IfElse(Expr, Box<Stmt>, Box<Stmt>),
@@ -50,6 +52,7 @@ pub enum UnOp {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Expr {
+    Index(Ident, Box<Expr>),
     Func(Ident, Vec<Expr>),
     BinOp(Box<Expr>, BinOp, Box<Expr>),
     UnOp(UnOp, Box<Expr>),

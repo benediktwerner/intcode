@@ -52,8 +52,9 @@ struct Gen<'a> {
     scopes: Vec<HashMap<Ident, VarLocation>>,
     code: Vec<asm::Stmt>,
     label_count: u32,
-    next_var_index: u32,
+    next_var_offset: u32,
     stack_height: u32,
+    global_arrays: Vec<(asm::Ident, u32)>,
     env: &'a IdentEnv<'a>,
 }
 
@@ -63,8 +64,9 @@ impl<'a> Gen<'a> {
             scopes: vec![HashMap::new()],
             code: Vec::new(),
             label_count: 0,
-            next_var_index: 0,
+            next_var_offset: 0,
             stack_height: 0,
+            global_arrays: Vec::new(),
             env,
         }
     }
@@ -82,24 +84,32 @@ impl<'a> Gen<'a> {
             self.gen_func(func)?;
         }
 
-        Ok(self.code)
+        let mut code = self.code;
+
+        for (ident, size) in self.global_arrays {
+            code.push(asm::Stmt::Label(ident));
+            code.push(asm::Stmt::DataArray(0, size as usize));
+        }
+
+        Ok(code)
     }
 
-    fn decl(&mut self, ident: Ident) -> Result {
+    fn decl(&mut self, ident: Ident, size: u32) -> Result {
         let is_global = self.scopes.len() == 1;
         let scope = self.scopes.last_mut().unwrap();
         if scope.contains_key(&ident) {
             return Err(CompilerError::DuplicateDeclaration(ident));
         }
         if is_global {
-            scope.insert(
-                ident,
-                VarLocation::Global(asm::Ident("__compiler_global", ident)),
-            );
+            let asm_ident = asm::Ident("__compiler_global", ident);
+            scope.insert(ident, VarLocation::Global(asm_ident));
+            if size > 1 {
+                self.global_arrays.push((asm_ident, size));
+            }
         } else {
-            scope.insert(ident, VarLocation::Local(self.next_var_index as i64 + 1));
-            self.next_var_index += 1;
-            self.add_stack_ptr(1);
+            scope.insert(ident, VarLocation::Local(self.next_var_offset as i64 + 1));
+            self.next_var_offset += size;
+            self.add_stack_ptr(size as i64);
         }
         Ok(())
     }
@@ -112,14 +122,14 @@ impl<'a> Gen<'a> {
         self.scopes.push(scope);
 
         self.stack_height = 0;
-        self.next_var_index = 0;
+        self.next_var_offset = 0;
 
         self.push(asm::Stmt::Label(asm::Ident("__compiler_func", func.name)));
 
         self.gen_stmt(func.body)?;
         self.gen_stmt(Stmt::Return(None))?;
 
-        assert_eq!(self.stack_height, self.next_var_index);
+        assert_eq!(self.stack_height, self.next_var_offset);
         self.add_stack_ptr(-(self.stack_height as i64));
 
         Ok(())
@@ -152,6 +162,23 @@ impl<'a> Gen<'a> {
                         ));
                         self.add_stack_ptr(-argc);
                         self.mov(TMP.to_pos(), target);
+                    }
+                }
+            }
+            Expr::Index(name, index) => {
+                self.gen_expr(*index, TMP)?;
+                match self.get_location(name)? {
+                    VarLocation::Global(ident) => {
+                        self.push(asm::Stmt::Add(ident.to_imm(), TMP.to_pos(), TMP.to_pos()));
+                        self.push(asm::Stmt::Load(TMP.to_pos(), TMP.to_pos()));
+                        self.mov(TMP.to_pos(), target);
+                    }
+                    VarLocation::Local(pos) => {
+                        self.push(asm::Stmt::AddRelBase(TMP.to_pos()));
+                        self.push(asm::Stmt::Mov(self.stack_index(pos), TMP2.to_pos()));
+                        self.push(asm::Stmt::Mul(TMP.to_pos(), (-1).into(), TMP.to_pos()));
+                        self.push(asm::Stmt::AddRelBase(TMP.to_pos()));
+                        self.mov(TMP2.to_pos(), target);
                     }
                 }
             }
@@ -223,12 +250,30 @@ impl<'a> Gen<'a> {
     }
     fn gen_stmt(&mut self, stmt: Stmt) -> Result {
         match stmt {
-            Stmt::Decl(ident) => self.decl(ident)?,
+            Stmt::Decl(ident) => self.decl(ident, 1)?,
             Stmt::DeclAssign(ident, expr) => {
-                self.decl(ident)?;
+                self.decl(ident, 1)?;
                 self.gen_expr(expr, self.get_location(ident)?)?;
             }
+            Stmt::DeclArray(ident, size) => self.decl(ident, size)?,
             Stmt::Assign(ident, expr) => self.gen_expr(expr, self.get_location(ident)?)?,
+            Stmt::AssignIndex(ident, index, expr) => {
+                self.gen_expr(expr, Target::StackTop)?;
+                self.gen_expr(index, TMP)?;
+                self.pop_stack(TMP2.to_pos());
+                match self.get_location(ident)? {
+                    VarLocation::Global(ident) => {
+                        self.push(asm::Stmt::Add(ident.to_imm(), TMP.to_pos(), TMP.to_pos()));
+                        self.push(asm::Stmt::Store(TMP2.to_pos(), TMP.to_pos()));
+                    }
+                    VarLocation::Local(pos) => {
+                        self.push(asm::Stmt::AddRelBase(TMP.to_pos()));
+                        self.push(asm::Stmt::Mov(TMP2.to_pos(), self.stack_index(pos)));
+                        self.push(asm::Stmt::Mul(TMP.to_pos(), (-1).into(), TMP.to_pos()));
+                        self.push(asm::Stmt::AddRelBase(TMP.to_pos()));
+                    }
+                }
+            }
             Stmt::Block(stmts) => {
                 self.scopes.push(HashMap::new());
                 for stmt in stmts {

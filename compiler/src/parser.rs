@@ -16,6 +16,11 @@ impl std::fmt::Display for SourcePos {
 }
 
 fn unop(op: UnOp, a: Expr) -> Expr {
+    if let UnOp::Neg = op {
+        if let Expr::Literal(val) = a {
+            return Expr::Literal(-val);
+        }
+    }
     Expr::UnOp(op, Box::new(a))
 }
 

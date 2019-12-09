@@ -30,7 +30,7 @@
         },
         {
           "name": "storage.modifier.declaration.intcode",
-          "match": "\\b(var|const)\\b"
+          "match": "\\b(var|const|array)\\b"
         }
       ]
     },

@@ -32,13 +32,17 @@ SimpleStmt: Stmt = <InlineStmt> ";";
 InlineStmt: Stmt = {
     DeclStmt,
     DeclAssignStmt,
+    DeclArrayStmt,
     AssignStmt,
+    AssignIndexStmt,
     ReturnStmt,
     ExprStmt,
 }
 DeclStmt: Stmt = "var" <Ident> => Stmt::Decl(<>);
 DeclAssignStmt: Stmt = "var" <name:Ident> "=" <expr:Expr> => Stmt::DeclAssign(name, expr);
+DeclArrayStmt: Stmt = "array" <name:Ident> "[" <size:Num> "]" => Stmt::DeclArray(name, size as u32);
 AssignStmt: Stmt = <name:Ident> "=" <expr:Expr> => Stmt::Assign(name, expr);
+AssignIndexStmt: Stmt = <name:Ident> "[" <index:Expr> "]" "=" <expr:Expr> => Stmt::AssignIndex(name, index, expr);
 ReturnStmt: Stmt = "return" <Expr?> => Stmt::Return(<>);
 ExprStmt: Stmt = Expr => Stmt::Expr(<>);
 BlockStmt: Stmt = "{" <Stmt*> "}" => Stmt::Block(<>);
@@ -92,6 +96,7 @@ Factor: Expr = {
     Ident => Expr::Var(<>),
     Literal => Expr::Literal(<>),
     "(" <Expr> ")",
+    <name:Ident> "[" <index:Expr> "]" => Expr::Index(name, Box::new(index)),
     <name:Ident> "(" <args:Comma<Expr>> ")" => Expr::Func(name, args),
 }
 
@@ -103,7 +108,7 @@ Literal: i64 = {
     Num,
 };
 
-Num: i64 = r"-?[0-9]+" => <>.parse().unwrap();
+Num: i64 = r"[0-9]+" => <>.parse().unwrap();
 
 Comma<T>: Vec<T> = {
     <v:(<T> ",")*> <e:T?> => match e {

@@ -127,7 +127,16 @@ Literal: i64 = {
     Num,
 };
 
-Num: i64 = r"[0-9]+" => <>.parse().unwrap();
+Num: i64 = {
+    NumDec,
+    NumHex,
+    NumOct,
+    NumBin
+}
+NumDec: i64 = r"[0-9]+" => <>.parse().unwrap();
+NumHex: i64 = r"0[xX][0-9a-fA-F]+" => i64::from_str_radix(&<>[2..], 16).unwrap();
+NumOct: i64 = r"0[oO][0-7]+" => i64::from_str_radix(&<>[2..], 8).unwrap();
+NumBin: i64 = r"0[bB][01]+" => i64::from_str_radix(&<>[2..], 2).unwrap();
 
 Comma<T>: Vec<T> = {
     <v:(<T> ",")*> <e:T?> => match e {

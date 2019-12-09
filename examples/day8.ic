@@ -6,7 +6,7 @@
 // The program will then output the result for part 1 and then every pixel for part 2 as
 // a seperate line.
 
-const LAYER_SIZE = 25 * 6;
+const LAYER_SIZE = (0x10 + 0b1001) * 0o6; // 25 * 6
 
 var fewest_zeros = LAYER_SIZE + 1;
 var ones_x_twos = 0;

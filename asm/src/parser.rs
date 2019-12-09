@@ -49,8 +49,8 @@ fn parse_num(pair: Pair<Rule>) -> i64 {
         Rule::num => parse_num(pair.into_inner().next().unwrap()),
         Rule::decimal => pair.as_str().parse().unwrap(),
         Rule::hex => parse_radix(pair, 16),
-        Rule::oct => parse_radix(pair, 16),
-        Rule::bin => parse_radix(pair, 16),
+        Rule::oct => parse_radix(pair, 8),
+        Rule::bin => parse_radix(pair, 2),
         _ => unreachable!(),
     }
 }

@@ -29,6 +29,32 @@ $ cargo build
 $ ./target/debug/intcode
 ```
 
+## Compiler
+
+The compiler can compile code written in a simple high-level language to intcode:
+
+```
+// Comment
+
+var x;              // Variables must be declared before their first use and are initialized to zero
+var y = 13;         // but they can also be declared on the first assignment
+
+var z = input();    // Get input
+print(y);           // Produce output
+
+func fib(x) {       // Arguments and variables declared in functions are seperate for each call
+    y = 42;         // Modify a global variabl
+    if x < 2 {
+        return 1;
+    }
+    return fib(x - 1) * x;  // Recursion is possible
+}
+
+print(fib(z));
+print(x);           // Still zero because the function has its own scope
+print(y);           // Changed to 42
+```
+
 ## Assembler
 
 ### Example
@@ -96,29 +122,3 @@ The predifined label `__end` can be used to get the address after all the genera
 This is useful for putting a stack after the program: `add_rel_base :__end`. Simply putting
 a label at the end of the program will not work if the program contains
 undeclared labels/variables because they will be put after the program.
-
-## Compiler
-
-The compiler can compile code written in a simple high-level language to intcode:
-
-```
-// Comment
-
-var x;              // Variables must be declared before their first use and are initialized to zero
-var y = 13;         // but they can also be declared on the first assignment
-
-var z = input();    // Get input
-print(y);           // Produce output
-
-func fib(x) {       // Arguments and variables declared in functions are seperate for each call
-    y = 42;         // Modify a global variabl
-    if x < 2 {
-        return 1;
-    }
-    return fib(x - 1) * x;  // Recursion is possible
-}
-
-print(fib(z));
-print(x);           // Still zero because the function has its own scope
-print(y);           // Changed to 42
-```

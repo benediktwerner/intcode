@@ -78,16 +78,20 @@ struct VM {
     rel_base: i64,
     param_modes: i64,
     trace: bool,
+    trace_load_store: bool,
+    prompt_input: bool,
 }
 
 impl VM {
-    fn new(memory: Vec<i64>, trace: bool) -> Self {
+    fn new(memory: Vec<i64>, trace: bool, trace_load_store: bool, prompt_input: bool) -> Self {
         Self {
             memory,
             ip: 0,
             param_modes: 0,
             rel_base: 0,
             trace,
+            trace_load_store,
+            prompt_input,
         }
     }
 
@@ -107,8 +111,12 @@ impl VM {
         ))
     }
 
+    fn get_memory(&self, index: usize) -> i64 {
+        self.memory.get(index).copied().unwrap_or_default()
+    }
+
     fn fetch(&mut self) -> i64 {
-        let val = self.memory[self.ip];
+        let val = self.get_memory(self.ip);
         self.ip += 1;
         val
     }
@@ -148,27 +156,35 @@ impl VM {
     }
 
     fn load(&self, param: Param) -> Result<i64> {
-        match param.mode {
+        let index = match param.mode {
             ParamMode::Positional => {
                 if param.val < 0 {
-                    Err(format!(
+                    return Err(format!(
                         "Invalid access to negative memory index: {}",
                         param.val
-                    ))
+                    ));
                 } else {
-                    Ok(self.memory[param.val as usize])
+                    param.val
                 }
             }
-            ParamMode::Immediate => Ok(param.val),
+            ParamMode::Immediate => return Ok(param.val),
             ParamMode::Relative => {
-                let val = param.val + self.rel_base;
-                if val < 0 {
-                    Err(format!("Invalid access to negative memory index: {}", val))
+                let index = param.val + self.rel_base;
+                if index < 0 {
+                    return Err(format!(
+                        "Invalid access to negative memory index: {}",
+                        index
+                    ));
                 } else {
-                    Ok(self.memory[val as usize])
+                    index
                 }
             }
+        };
+        let val = self.get_memory(index as usize);
+        if self.trace_load_store {
+            println!("  Load {} = {} => {}", param, index, val);
         }
+        Ok(val)
     }
 
     fn store(&mut self, param: Param, val: i64) -> Result {
@@ -179,6 +195,9 @@ impl VM {
         };
         if index >= self.memory.len() {
             self.memory.resize(index + 1, 0);
+        }
+        if self.trace_load_store {
+            println!("  Store {} to {} = {}", val, param, index);
         }
         self.memory[index] = val;
         Ok(())
@@ -198,14 +217,26 @@ impl VM {
             match instr {
                 Add(a, b, c) => self.store(c, self.load(a)? + self.load(b)?)?,
                 Mul(a, b, c) => self.store(c, self.load(a)? * self.load(b)?)?,
-                In(a) => {
-                    print!("Input: ");
+                In(a) => loop {
+                    if self.prompt_input {
+                        print!("Input: ");
+                    }
                     io::stdout().flush().unwrap();
                     let stdin = io::stdin();
-                    let line = stdin.lock().lines().next().unwrap().unwrap();
-                    let input = line.parse().unwrap();
-                    self.store(a, input)?;
-                }
+                    let line = stdin.lock().lines().next();
+                    if let Some(line) = line {
+                        let input = line.expect("error during stdin read").parse();
+                        match input {
+                            Ok(input) => {
+                                self.store(a, input)?;
+                                break;
+                            }
+                            Err(_) => println!("Not a number. Try again."),
+                        }
+                    } else {
+                        return Err("Unexpected EOF".to_string());
+                    }
+                },
                 Out(a) => println!("Output: {}", self.load(a)?),
                 JumpTrue(cond, target) => {
                     if self.load(cond)? != 0 {
@@ -231,17 +262,17 @@ impl VM {
     }
 }
 
-pub fn run(code: Vec<i64>, trace: bool) {
-    if let Err(error) = VM::new(code, trace).run() {
+pub fn run(code: Vec<i64>, trace: bool, trace_load_store: bool, prompt_input: bool) {
+    if let Err(error) = VM::new(code, trace, trace_load_store, prompt_input).run() {
         eprintln!("Error during execution:");
         eprintln!("{}", error);
     }
 }
 
-pub fn run_file(file: &str, trace: bool) {
+pub fn run_file(file: &str, trace: bool, trace_load_store: bool, prompt_input: bool) {
     let reader = std::io::BufReader::new(std::fs::File::open(file).unwrap());
     let line = reader.lines().next().unwrap().unwrap();
     let code = line.split(',').map(|c| c.parse().unwrap()).collect();
 
-    run(code, trace);
+    run(code, trace, trace_load_store, prompt_input);
 }

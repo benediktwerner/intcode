@@ -15,8 +15,18 @@ fn main() {
                 .arg(
                     clap::Arg::with_name("trace")
                         .long("trace")
-                        .help("Trace all instructions during execution")
+                        .help("Trace all instructions during execution"),
+                )
+                .arg(
+                    clap::Arg::with_name("trace-load-store")
+                        .long("trace-load-store")
+                        .help("Trace all memory loads and stores during execution")
                         .requires("run"),
+                )
+                .arg(
+                    clap::Arg::with_name("no-prompt")
+                        .long("no-prompt")
+                        .help("Don't prompt for  instructions during execution"),
                 ),
         )
         .subcommand(
@@ -36,6 +46,18 @@ fn main() {
                     clap::Arg::with_name("trace")
                         .long("trace")
                         .help("Trace all instructions during execution")
+                        .requires("run"),
+                )
+                .arg(
+                    clap::Arg::with_name("trace-load-store")
+                        .long("trace-load-store")
+                        .help("Trace all memory loads and stores during execution")
+                        .requires("run"),
+                )
+                .arg(
+                    clap::Arg::with_name("no-prompt")
+                        .long("no-prompt")
+                        .help("Don't prompt for  instructions during execution")
                         .requires("run"),
                 ),
         )
@@ -62,6 +84,18 @@ fn main() {
                         .long("trace")
                         .help("Trace all instructions during execution")
                         .requires("run"),
+                )
+                .arg(
+                    clap::Arg::with_name("trace-load-store")
+                        .long("trace-load-store")
+                        .help("Trace all memory loads and stores during execution")
+                        .requires("run"),
+                )
+                .arg(
+                    clap::Arg::with_name("no-prompt")
+                        .long("no-prompt")
+                        .help("Don't prompt for  instructions during execution")
+                        .requires("run"),
                 ),
         )
         .get_matches();
@@ -69,11 +103,15 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("run") {
         let file = matches.value_of("file").unwrap();
         let trace = matches.is_present("trace");
-        intcode_vm::run_file(file, trace);
+        let trace_load_store = matches.is_present("trace-load-store");
+        let prompt = !matches.is_present("no-prompt");
+        intcode_vm::run_file(file, trace, trace_load_store, prompt);
     } else if let Some(matches) = matches.subcommand_matches("asm") {
         let file = matches.value_of("file").unwrap();
         let run = matches.is_present("run");
         let trace = matches.is_present("trace");
+        let trace_load_store = matches.is_present("trace-load-store");
+        let prompt = !matches.is_present("no-prompt");
 
         let stmts = match intcode_asm::parse_file(file) {
             Ok(code) => code,
@@ -86,7 +124,7 @@ fn main() {
         let code = intcode_asm::assemble(&stmts);
 
         if run {
-            intcode_vm::run(code, trace);
+            intcode_vm::run(code, trace, trace_load_store, prompt);
         } else {
             println!(
                 "{}",
@@ -101,6 +139,8 @@ fn main() {
         let print_asm = matches.is_present("asm");
         let run = matches.is_present("run");
         let trace = matches.is_present("trace");
+        let trace_load_store = matches.is_present("trace-load-store");
+        let prompt = !matches.is_present("no-prompt");
 
         let asm = match intcode_compiler::compile(file) {
             Ok(code) => code,
@@ -117,7 +157,7 @@ fn main() {
         let code = intcode_asm::assemble(&asm);
 
         if run {
-            intcode_vm::run(code, trace);
+            intcode_vm::run(code, trace, trace_load_store, prompt);
         } else if !print_asm {
             println!(
                 "{}",

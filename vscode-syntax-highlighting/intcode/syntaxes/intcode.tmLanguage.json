@@ -26,7 +26,7 @@
         },
         {
           "name": "keyword.control.flow.intcode",
-          "match": "\\b(if|while|for|return)\\b"
+          "match": "\\b(if|else|while|for|break|continue|return)\\b"
         },
         {
           "name": "storage.modifier.declaration.intcode",
@@ -219,7 +219,7 @@
     },
     "illegal-names": {
       "name": "keyword.control.flow.intcode",
-      "match": "\\b(and | const | func | else | for | if | in | is | not | or | return | var | while)\\b"
+      "match": "\\b(and | const | func | else | for | if | in | is | not | or | break | continue | return | var | array | while)\\b"
     },
     "illegal-operator": {
       "patterns": [

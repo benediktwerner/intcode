@@ -27,6 +27,7 @@ Stmt: Stmt = {
     SimpleStmt,
     BlockStmt,
     IfStmt,
+    WhileStmt,
 }
 SimpleStmt: Stmt = <InlineStmt> ";";
 InlineStmt: Stmt = {
@@ -35,6 +36,8 @@ InlineStmt: Stmt = {
     DeclArrayStmt,
     AssignStmt,
     AssignIndexStmt,
+    BreakStmt,
+    ContinueStmt,
     ReturnStmt,
     ExprStmt,
 }
@@ -43,6 +46,8 @@ DeclAssignStmt: Stmt = "var" <name:Ident> "=" <expr:Expr> => Stmt::DeclAssign(na
 DeclArrayStmt: Stmt = "array" <name:Ident> "[" <size:Num> "]" => Stmt::DeclArray(name, size as u32);
 AssignStmt: Stmt = <name:Ident> "=" <expr:Expr> => Stmt::Assign(name, expr);
 AssignIndexStmt: Stmt = <name:Ident> "[" <index:Expr> "]" "=" <expr:Expr> => Stmt::AssignIndex(name, index, expr);
+BreakStmt: Stmt = "break" => Stmt::Break;
+ContinueStmt: Stmt = "continue" => Stmt::Continue;
 ReturnStmt: Stmt = "return" <Expr?> => Stmt::Return(<>);
 ExprStmt: Stmt = Expr => Stmt::Expr(<>);
 BlockStmt: Stmt = "{" <Stmt*> "}" => Stmt::Block(<>);
@@ -50,6 +55,7 @@ IfStmt: Stmt = "if" <expr:Expr> <if_body:BlockStmt> <else_body:("else" <Stmt>)?>
     Some(body) => Stmt::IfElse(expr, Box::new(if_body), Box::new(body)),
     None => Stmt::If(expr, Box::new(if_body)),
 };
+WhileStmt: Stmt = "while" <cond:Expr> <body:BlockStmt> => Stmt::While(cond, Box::new(body));
 
 CmpOp: BinOp = {
     "==" => BinOp::Equal,

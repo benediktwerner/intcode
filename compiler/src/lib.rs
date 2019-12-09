@@ -26,6 +26,15 @@ pub fn compile(file: &str) -> Result<Vec<intcode_asm::Stmt>, String> {
                 CompilerError::UndefinedVar(ident) => {
                     format!("Undefined variable: {}", env.to_str(ident))
                 }
+                CompilerError::BreakOutsideLoop => {
+                    "Break outside loop".to_string()
+                }
+                CompilerError::ContinueOutsideLoop => {
+                    "Continue outside loop".to_string()
+                }
+                CompilerError::ReturnOutsideFunc => {
+                    "Return outside function".to_string()
+                }
             }
         )
     })

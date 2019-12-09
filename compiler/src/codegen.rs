@@ -12,6 +12,9 @@ type Result<T = ()> = std::result::Result<T, CompilerError>;
 pub enum CompilerError {
     DuplicateDeclaration(Ident),
     UndefinedVar(Ident),
+    BreakOutsideLoop,
+    ContinueOutsideLoop,
+    ReturnOutsideFunc,
 }
 
 pub fn gen(program: Program, env: &IdentEnv) -> Result<Vec<asm::Stmt>> {
@@ -55,6 +58,9 @@ struct Gen<'a> {
     next_var_offset: u32,
     stack_height: u32,
     global_arrays: Vec<(asm::Ident, u32)>,
+    inside_func: bool,
+    label_continue: Option<asm::Ident>,
+    label_break: Option<asm::Ident>,
     env: &'a IdentEnv<'a>,
 }
 
@@ -67,6 +73,9 @@ impl<'a> Gen<'a> {
             next_var_offset: 0,
             stack_height: 0,
             global_arrays: Vec::new(),
+            inside_func: false,
+            label_continue: None,
+            label_break: None,
             env,
         }
     }
@@ -95,21 +104,19 @@ impl<'a> Gen<'a> {
     }
 
     fn decl(&mut self, ident: Ident, size: u32) -> Result {
-        let is_global = self.scopes.len() == 1;
         let scope = self.scopes.last_mut().unwrap();
         if scope.contains_key(&ident) {
             return Err(CompilerError::DuplicateDeclaration(ident));
         }
-        if is_global {
+        if self.inside_func {
+            scope.insert(ident, VarLocation::Local(self.next_var_offset as i64));
+            self.next_var_offset += size;
+        } else {
             let asm_ident = asm::Ident("__compiler_global", ident);
             scope.insert(ident, VarLocation::Global(asm_ident));
             if size > 1 {
                 self.global_arrays.push((asm_ident, size));
             }
-        } else {
-            scope.insert(ident, VarLocation::Local(self.next_var_offset as i64 + 1));
-            self.next_var_offset += size;
-            self.add_stack_ptr(size as i64);
         }
         Ok(())
     }
@@ -122,15 +129,17 @@ impl<'a> Gen<'a> {
         self.scopes.push(scope);
 
         self.stack_height = 0;
-        self.next_var_offset = 0;
+        self.next_var_offset = 1;
+        self.inside_func = true;
 
         self.push(asm::Stmt::Label(asm::Ident("__compiler_func", func.name)));
+
+        self.add_stack_ptr(locals_size(&func.body));
 
         self.gen_stmt(func.body)?;
         self.gen_stmt(Stmt::Return(None))?;
 
-        assert_eq!(self.stack_height, self.next_var_offset);
-        self.add_stack_ptr(-(self.stack_height as i64));
+        self.inside_func = false;
 
         Ok(())
     }
@@ -299,12 +308,46 @@ impl<'a> Gen<'a> {
                 self.gen_stmt(*else_body)?;
                 self.label(label_end);
             }
+            Stmt::While(cond, body) => {
+                let label_start = self.make_label();
+                let label_end = self.make_label();
+                self.label_continue = Some(label_start);
+                self.label_break = Some(label_end);
+
+                self.label(label_start);
+                self.gen_expr(cond, TMP)?;
+                self.jmp_false(TMP, label_end);
+                self.gen_stmt(*body)?;
+                self.jmp(label_start);
+                self.label(label_end);
+
+                self.label_continue = None;
+                self.label_break = None;
+            }
+            Stmt::Break => {
+                if let Some(target) = self.label_break {
+                    self.jmp(target);
+                } else {
+                    return Err(CompilerError::BreakOutsideLoop);
+                }
+            }
+            Stmt::Continue => {
+                if let Some(target) = self.label_continue {
+                    self.jmp(target);
+                } else {
+                    return Err(CompilerError::ContinueOutsideLoop);
+                }
+            }
             Stmt::Return(val) => {
+                if !self.inside_func {
+                    return Err(CompilerError::ReturnOutsideFunc);
+                }
                 if let Some(val) = val {
                     self.gen_expr(val, TMP)?;
                 } else {
                     self.push(asm::Stmt::Mov(0.into(), TMP.to_pos()));
                 }
+                self.add_stack_ptr(-(self.stack_height as i64));
                 self.push(asm::Stmt::Ret);
             }
             Stmt::Expr(expr) => self.gen_expr(expr, TMP)?,
@@ -356,5 +399,23 @@ impl<'a> Gen<'a> {
 
     fn push(&mut self, stmt: asm::Stmt) {
         self.code.push(stmt);
+    }
+}
+
+fn locals_size(stmt: &Stmt) -> i64 {
+    match stmt {
+        Stmt::Decl(..) => 1,
+        Stmt::DeclAssign(..) => 1,
+        Stmt::DeclArray(_, size) => *size as i64,
+        Stmt::Assign(..) => 0,
+        Stmt::AssignIndex(..) => 0,
+        Stmt::Block(stmts) => stmts.iter().map(locals_size).sum(),
+        Stmt::If(_, body) => locals_size(body),
+        Stmt::IfElse(_, if_body, else_body) => locals_size(if_body) + locals_size(else_body),
+        Stmt::While(_, body) => locals_size(body),
+        Stmt::Break => 0,
+        Stmt::Continue => 0,
+        Stmt::Return(..) => 0,
+        Stmt::Expr(..) => 0,
     }
 }

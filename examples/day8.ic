@@ -28,7 +28,6 @@ while has_input {
 
     while index < LAYER_SIZE {
         var x = input();
-        print(x);
         if x == 0 {
             zeros += 1;
         }

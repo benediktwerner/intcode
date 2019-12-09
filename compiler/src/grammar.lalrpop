@@ -36,6 +36,7 @@ InlineStmt: Stmt = {
     ConstAssignStmt,
     DeclArrayStmt,
     AssignStmt,
+    AssignOpStmt,
     AssignIndexStmt,
     BreakStmt,
     ContinueStmt,

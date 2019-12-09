@@ -27,11 +27,9 @@ pub fn parse<'a>(
 
 pub fn strip_comments(s: String) -> String {
     let mut result = Vec::new();
-    let regex = regex::Regex::new(r"\s*//.*").unwrap();
+    let regex = regex::Regex::new(r"//.*").unwrap();
     for line in s.lines() {
-        if !regex.is_match(line) {
-            result.push(line);
-        }
+        result.push(regex.replace(line, ""));
     }
     result.join("\n")
 }

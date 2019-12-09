@@ -15,6 +15,9 @@ pub enum CompilerError {
     BreakOutsideLoop,
     ContinueOutsideLoop,
     ReturnOutsideFunc,
+    FuncInConst,
+    IndexInConst,
+    UndefinedVarInConst,
 }
 
 pub fn gen(program: Program, env: &IdentEnv) -> Result<Vec<asm::Stmt>> {
@@ -61,6 +64,7 @@ struct Gen<'a> {
     inside_func: bool,
     label_continue: Option<asm::Ident>,
     label_break: Option<asm::Ident>,
+    consts: HashMap<Ident, i64>,
     env: &'a IdentEnv<'a>,
 }
 
@@ -76,6 +80,7 @@ impl<'a> Gen<'a> {
             inside_func: false,
             label_continue: None,
             label_break: None,
+            consts: HashMap::new(),
             env,
         }
     }
@@ -84,6 +89,7 @@ impl<'a> Gen<'a> {
         self.push(asm::Stmt::AddRelBase(asm::Ident("__end", 0).to_imm()));
 
         for stmt in program.stmts {
+            self.collect_consts(&stmt)?;
             self.gen_stmt(stmt)?;
         }
 
@@ -133,8 +139,10 @@ impl<'a> Gen<'a> {
         self.inside_func = true;
 
         self.push(asm::Stmt::Label(asm::Ident("__compiler_func", func.name)));
+        self.collect_consts(&func.body)?;
 
-        self.add_stack_ptr(locals_size(&func.body));
+        let locals_size = self.locals_size(&func.body)?;
+        self.add_stack_ptr(locals_size);
 
         self.gen_stmt(func.body)?;
         self.gen_stmt(Stmt::Return(None))?;
@@ -220,13 +228,20 @@ impl<'a> Gen<'a> {
                 }
                 self.mov(TMP.to_pos(), target);
             }
-            Expr::Var(name) => match self.get_location(name)? {
-                VarLocation::Global(ident) => self.mov(ident.to_pos(), target),
-                VarLocation::Local(pos) => {
-                    self.push(asm::Stmt::Mov(self.stack_index(pos), TMP.to_pos()));
-                    self.mov(TMP.to_pos(), target);
+            Expr::Var(name) => {
+                if let Some(val) = self.consts.get(&name) {
+                    let val = *val;
+                    self.mov(val, target);
+                } else {
+                    match self.get_location(name)? {
+                        VarLocation::Global(ident) => self.mov(ident.to_pos(), target),
+                        VarLocation::Local(pos) => {
+                            self.push(asm::Stmt::Mov(self.stack_index(pos), TMP.to_pos()));
+                            self.mov(TMP.to_pos(), target);
+                        }
+                    }
                 }
-            },
+            }
             Expr::Literal(val) => self.mov(val, target),
         }
         Ok(())
@@ -265,7 +280,8 @@ impl<'a> Gen<'a> {
                 self.decl(ident, 1)?;
                 self.gen_expr(expr, self.get_location(ident)?)?;
             }
-            Stmt::DeclArray(ident, size) => self.decl(ident, size)?,
+            Stmt::ConstAssignStmt(..) => (),
+            Stmt::DeclArray(ident, size) => self.decl(ident, self.const_eval(&size)? as u32)?,
             Stmt::Assign(ident, expr) => self.gen_expr(expr, self.get_location(ident)?)?,
             Stmt::AssignIndex(ident, index, expr) => {
                 self.gen_expr(expr, Target::StackTop)?;
@@ -401,22 +417,110 @@ impl<'a> Gen<'a> {
     fn push(&mut self, stmt: asm::Stmt) {
         self.code.push(stmt);
     }
+
+    fn const_eval(&self, expr: &Expr) -> Result<i64> {
+        let val = match expr {
+            Expr::Func(..) => return Err(CompilerError::FuncInConst),
+            Expr::Index(..) => return Err(CompilerError::IndexInConst),
+            Expr::BinOp(left, op, right) => {
+                let left = self.const_eval(left)?;
+                let right = self.const_eval(right)?;
+                match op {
+                    BinOp::Add => left + right,
+                    BinOp::Sub => left - right,
+                    BinOp::Mul => left * right,
+                    BinOp::Div => left / right,
+                    BinOp::Equal => bool2int(left == right),
+                    BinOp::NotEqual => bool2int(left != right),
+                    BinOp::LessThan => bool2int(left < right),
+                    BinOp::LessEqual => bool2int(left <= right),
+                    BinOp::GreaterThan => bool2int(left > right),
+                    BinOp::GreaterEqual => bool2int(left >= right),
+                    BinOp::And => bool2int(left != 0 && right != 0),
+                    BinOp::Or => bool2int(left != 0 || right != 0),
+                }
+            }
+            Expr::UnOp(op, expr) => {
+                let val = self.const_eval(expr)?;
+                match op {
+                    UnOp::Neg => -val,
+                    UnOp::Not => bool2int(val == 0),
+                }
+            }
+            Expr::Var(ident) => {
+                if let Some(val) = self.consts.get(ident) {
+                    *val
+                } else {
+                    return Err(CompilerError::UndefinedVarInConst);
+                }
+            }
+            Expr::Literal(val) => *val,
+        };
+        Ok(val)
+    }
+
+    fn locals_size(&self, stmt: &Stmt) -> Result<i64> {
+        Ok(match stmt {
+            Stmt::Decl(..) => 1,
+            Stmt::DeclAssign(..) => 1,
+            Stmt::ConstAssignStmt(..) => 0,
+            Stmt::DeclArray(_, size) => self.const_eval(size)?,
+            Stmt::Assign(..) => 0,
+            Stmt::AssignIndex(..) => 0,
+            Stmt::Block(stmts) => {
+                let mut total = 0;
+                for stmt in stmts {
+                    total += self.locals_size(stmt)?;
+                }
+                total
+            }
+            Stmt::If(_, body) => self.locals_size(body)?,
+            Stmt::IfElse(_, if_body, else_body) => {
+                self.locals_size(if_body)? + self.locals_size(else_body)?
+            }
+            Stmt::While(_, body) => self.locals_size(body)?,
+            Stmt::Break => 0,
+            Stmt::Continue => 0,
+            Stmt::Return(..) => 0,
+            Stmt::Expr(..) => 0,
+        })
+    }
+
+    fn collect_consts(&mut self, stmt: &Stmt) -> Result {
+        match stmt {
+            Stmt::Decl(..) => (),
+            Stmt::DeclAssign(..) => (),
+            Stmt::ConstAssignStmt(ident, expr) => {
+                let val = self.const_eval(expr)?;
+                self.consts.insert(*ident, val);
+            }
+            Stmt::DeclArray(..) => (),
+            Stmt::Assign(..) => (),
+            Stmt::AssignIndex(..) => (),
+            Stmt::Block(stmts) => {
+                for stmt in stmts {
+                    self.collect_consts(stmt)?;
+                }
+            }
+            Stmt::If(_, body) => self.collect_consts(body)?,
+            Stmt::IfElse(_, if_body, else_body) => {
+                self.collect_consts(if_body)?;
+                self.collect_consts(else_body)?;
+            }
+            Stmt::While(_, body) => self.collect_consts(body)?,
+            Stmt::Break => (),
+            Stmt::Continue => (),
+            Stmt::Return(..) => (),
+            Stmt::Expr(..) => (),
+        }
+        Ok(())
+    }
 }
 
-fn locals_size(stmt: &Stmt) -> i64 {
-    match stmt {
-        Stmt::Decl(..) => 1,
-        Stmt::DeclAssign(..) => 1,
-        Stmt::DeclArray(_, size) => *size as i64,
-        Stmt::Assign(..) => 0,
-        Stmt::AssignIndex(..) => 0,
-        Stmt::Block(stmts) => stmts.iter().map(locals_size).sum(),
-        Stmt::If(_, body) => locals_size(body),
-        Stmt::IfElse(_, if_body, else_body) => locals_size(if_body) + locals_size(else_body),
-        Stmt::While(_, body) => locals_size(body),
-        Stmt::Break => 0,
-        Stmt::Continue => 0,
-        Stmt::Return(..) => 0,
-        Stmt::Expr(..) => 0,
+fn bool2int(val: bool) -> i64 {
+    if val {
+        1
+    } else {
+        0
     }
 }

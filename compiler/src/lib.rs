@@ -35,6 +35,15 @@ pub fn compile(file: &str) -> Result<Vec<intcode_asm::Stmt>, String> {
                 CompilerError::ReturnOutsideFunc => {
                     "Return outside function".to_string()
                 }
+                CompilerError::FuncInConst => {
+                    "Function call in const context".to_string()
+                }
+                CompilerError::IndexInConst => {
+                    "Array indexing in const context".to_string()
+                }
+                CompilerError::UndefinedVarInConst => {
+                    "Undefined or un-const variable in const context".to_string()
+                }
             }
         )
     })

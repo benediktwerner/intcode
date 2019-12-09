@@ -19,7 +19,8 @@ pub struct Function {
 pub enum Stmt {
     Decl(Ident),
     DeclAssign(Ident, Expr),
-    DeclArray(Ident, u32),
+    ConstAssignStmt(Ident, Expr),
+    DeclArray(Ident, Expr),
     Assign(Ident, Expr),
     AssignIndex(Ident, Expr, Expr),
     Block(Vec<Stmt>),

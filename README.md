@@ -124,3 +124,12 @@ The predifined label `__end` can be used to get the address after all the genera
 This is useful for putting a stack after the program: `add_rel_base :__end`. Simply putting
 a label at the end of the program will not work if the program contains
 undeclared labels/variables because they will be put after the program.
+
+### Parameter types
+
+- Identifier positional: `some_name`
+- Identifier immediate: `:some_name`
+- Identifier relative: `%some_name`
+- Value positional: `[42]`
+- Value immediate: `42`
+- Value relative: `%42`

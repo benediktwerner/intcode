@@ -10,7 +10,7 @@ array image[LAYER_SIZE];
 var index = 0;
 while index < LAYER_SIZE {
     image[index] = 2;
-    index = index + 1;
+    index += 1;
 }
 
 while has_input {
@@ -22,13 +22,13 @@ while has_input {
     while index < LAYER_SIZE {
         var x = input();
         if x == 0 {
-            zeros = zeros + 1;
+            zeros += 1;
         }
         else if x == 1 {
-            ones = ones + 1;
+            ones += 1;
         }
         else if x == 2 {
-            twos = twos + 1;
+            twos += 1;
         }
         else {
             has_input = false;
@@ -37,7 +37,7 @@ while has_input {
         if image[index] != 2 {
             image[index] = x;
         }
-        index = index + 1;
+        index += 1;
     }
 
     if has_input and zeros < fewest_zeros {
@@ -51,5 +51,5 @@ print(ones_x_twos);
 index = 0;
 while index < LAYER_SIZE {
     print(image[index]);
-    index = index + 1;
+    index += 1;
 }

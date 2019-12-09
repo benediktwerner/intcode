@@ -280,9 +280,13 @@ impl<'a> Gen<'a> {
                 self.decl(ident, 1)?;
                 self.gen_expr(expr, self.get_location(ident)?)?;
             }
-            Stmt::ConstAssignStmt(..) => (),
+            Stmt::ConstAssign(..) => (),
             Stmt::DeclArray(ident, size) => self.decl(ident, self.const_eval(&size)? as u32)?,
             Stmt::Assign(ident, expr) => self.gen_expr(expr, self.get_location(ident)?)?,
+            Stmt::AssignOp(ident, op, expr) => {
+                let expr = Expr::BinOp(Box::new(Expr::Var(ident)), op, Box::new(expr));
+                self.gen_expr(expr, self.get_location(ident)?);
+            }
             Stmt::AssignIndex(ident, index, expr) => {
                 self.gen_expr(expr, Target::StackTop)?;
                 self.gen_expr(index, TMP)?;
@@ -463,9 +467,10 @@ impl<'a> Gen<'a> {
         Ok(match stmt {
             Stmt::Decl(..) => 1,
             Stmt::DeclAssign(..) => 1,
-            Stmt::ConstAssignStmt(..) => 0,
+            Stmt::ConstAssign(..) => 0,
             Stmt::DeclArray(_, size) => self.const_eval(size)?,
             Stmt::Assign(..) => 0,
+            Stmt::AssignOp(..) => 0,
             Stmt::AssignIndex(..) => 0,
             Stmt::Block(stmts) => {
                 let mut total = 0;
@@ -490,7 +495,7 @@ impl<'a> Gen<'a> {
         match stmt {
             Stmt::Decl(..) => (),
             Stmt::DeclAssign(..) => (),
-            Stmt::ConstAssignStmt(ident, expr) => {
+            Stmt::ConstAssign(ident, expr) => {
                 let val = self.const_eval(expr)?;
                 self.consts.insert(*ident, val);
             }

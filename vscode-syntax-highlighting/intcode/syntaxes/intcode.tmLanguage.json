@@ -70,7 +70,7 @@
     },
     "assignment-operator": {
       "name": "keyword.operator.assignment.intcode",
-      "match": "=(?!=)"
+      "match": "\\+=|-=|/=|\\*=|%=|(?!=)"
     },
     "operator": {
       "match": "(?x)\\b(and | or | not | in | is)(?!\\s*:)\b | (<< | >> | & | \\| | \\^ | ~) | (\\*\\* | \\* | \\+ | - | % | /) | (!= | == | >= | <= | < | >)",

@@ -44,9 +44,10 @@ InlineStmt: Stmt = {
 }
 DeclStmt: Stmt = "var" <Ident> => Stmt::Decl(<>);
 DeclAssignStmt: Stmt = "var" <name:Ident> "=" <expr:Expr> => Stmt::DeclAssign(name, expr);
-ConstAssignStmt: Stmt = "const" <name:Ident> "=" <expr:Expr> => Stmt::ConstAssignStmt(name, expr);
+ConstAssignStmt: Stmt = "const" <name:Ident> "=" <expr:Expr> => Stmt::ConstAssign(name, expr);
 DeclArrayStmt: Stmt = "array" <name:Ident> "[" <size:Expr> "]" => Stmt::DeclArray(name, size);
 AssignStmt: Stmt = <name:Ident> "=" <expr:Expr> => Stmt::Assign(name, expr);
+AssignOpStmt: Stmt = Ident AssignOp Expr => Stmt::AssignOp(<>);
 AssignIndexStmt: Stmt = <name:Ident> "[" <index:Expr> "]" "=" <expr:Expr> => Stmt::AssignIndex(name, index, expr);
 BreakStmt: Stmt = "break" => Stmt::Break;
 ContinueStmt: Stmt = "continue" => Stmt::Continue;
@@ -59,6 +60,12 @@ IfStmt: Stmt = "if" <expr:Expr> <if_body:BlockStmt> <else_body:("else" <Stmt>)?>
 };
 WhileStmt: Stmt = "while" <cond:Expr> <body:BlockStmt> => Stmt::While(cond, Box::new(body));
 
+AssignOp: BinOp = {
+    "+=" => BinOp::Add,
+    "-=" => BinOp::Sub,
+    "*=" => BinOp::Mul,
+    "/=" => BinOp::Div,
+};
 CmpOp: BinOp = {
     "==" => BinOp::Equal,
     "!=" => BinOp::NotEqual,

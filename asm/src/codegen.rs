@@ -380,6 +380,13 @@ struct Assembler {
 }
 
 impl Assembler {
+    fn new() -> Self {
+        Self {
+            macro_counter: 1,
+            ..Self::default()
+        }
+    }
+
     fn assemble(mut self, stmts: &[Stmt]) -> Vec<i64> {
         self.assemble_stmts(stmts);
 
@@ -594,5 +601,5 @@ impl Assembler {
 }
 
 pub fn assemble(stmts: &[Stmt]) -> Vec<i64> {
-    Assembler::default().assemble(stmts)
+    Assembler::new().assemble(stmts)
 }

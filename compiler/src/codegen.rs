@@ -201,6 +201,7 @@ impl<'a> Gen<'a> {
                     BinOp::Mul => asm::Stmt::Mul,
                     BinOp::Div => asm::Stmt::Div,
                     BinOp::Equal => asm::Stmt::Equal,
+                    BinOp::NotEqual => asm::Stmt::NotEqual,
                     BinOp::LessThan => asm::Stmt::LessThan,
                     BinOp::LessEqual => asm::Stmt::LessEqual,
                     BinOp::GreaterThan => asm::Stmt::GreaterThan,

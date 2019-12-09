@@ -132,6 +132,7 @@ fn parse_stmt<'a>(pair: Pair<'a, Rule>, env: &mut IdentEnv<'a>) -> Stmt {
                 "div" => Stmt::Div,
                 "mod" => Stmt::Mod,
                 "eq" => Stmt::Equal,
+                "neq" => Stmt::NotEqual,
                 "lt" => Stmt::LessThan,
                 "leq" => Stmt::LessEqual,
                 "gt" => Stmt::GreaterThan,

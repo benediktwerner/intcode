@@ -59,6 +59,7 @@ WhileStmt: Stmt = "while" <cond:Expr> <body:BlockStmt> => Stmt::While(cond, Box:
 
 CmpOp: BinOp = {
     "==" => BinOp::Equal,
+    "!=" => BinOp::NotEqual,
     "<" => BinOp::LessThan,
     "<=" => BinOp::LessEqual,
     ">" => BinOp::GreaterThan,

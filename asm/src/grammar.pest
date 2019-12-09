@@ -24,7 +24,7 @@ data_array = { "array" ~ num ~ num }
 
 unary_instr = { "in" | "out" | "jmp" | "push" | "pop" | "call" | "add_rel_base" }
 binary_instr = { "jnz" | "jmp_true" | "jz" | "jmp_false" | "not" | "mov" | "load" | "store" }
-ternary_instr = { "add" | "mul" | "sub" | "div" | "mod" | "eq" | "lt" | "leq" | "gt" | "geq" | "and" | "or" }
+ternary_instr = { "add" | "mul" | "sub" | "div" | "mod" | "eq" | "neq" | "lt" | "leq" | "gt" | "geq" | "and" | "or" }
 quaternary_instr = { "divmod" }
 
 ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }

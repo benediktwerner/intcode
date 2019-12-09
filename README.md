@@ -102,6 +102,7 @@ More examples can be found in the `examples` directory.
 |      `jnz a target`      |          `if a != 0: goto target`          |                     Alias: `jtrue`                      |
 |      `jz a target`       |          `if a == 0: goto target`          |                     Alias: `jfalse`                     |
 |     `eq a b target`      |             `target = a == b`              |                                                         |
+|     `neq a b target`     |             `target = a != b`              |                                                         |
 |     `lt a b target`      |              `target = a < b`              |                                                         |
 |     `leq a b target`     |             `target = a <= b`              |                                                         |
 |     `gt a b target`      |              `target = a > b`              |                                                         |

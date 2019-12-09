@@ -36,7 +36,7 @@ The compiler can compile code written in a simple high-level language to intcode
 ```
 // Comment
 
-var x;              // Variables must be declared before their first use and are initialized to zero
+var x;              // Variables must be declared before their first use. Globals are initialized to zero.
 var y = 13;         // but they can also be declared on the first assignment
 
 var z = input();    // Get input

@@ -53,9 +53,21 @@ func fib(x) {       // Arguments and variables declared in functions are seperat
 print(fib(z));
 print(x);           // Still zero because the function has its own scope
 print(y);           // Changed to 42
+
+const LENGTH = 6 * 7;   // Constants are computed at compile time
+
+array a[LENGTH];        // Declare a new array with the given length. Only constant expressions can be used to specify the length
+
+var index = 0;
+while index < LENGTH {
+    a[index] = fib(index);
+}
+
+print(a[LENGTH - 1]);
 ```
 
-An extension for syntax highlighting in vscode can be found in [`vscode-syntax-highlighting`](vscode-syntax-highlighting).
+An extension for syntax highlighting in Visual Studio Code can be found in [`vscode-syntax-highlighting`](vscode-syntax-highlighting).
+It works if the file has the `.ic` extension.
 
 ## Assembler
 

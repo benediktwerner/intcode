@@ -455,6 +455,13 @@ impl Assembler {
             eprintln!("Warning: The program has no 'hlt' instruction!");
         }
 
+        while let Some(val) = self.code.last() {
+            if *val != 0 {
+                break;
+            }
+            self.code.pop();
+        }
+
         self.code
     }
 

@@ -12,8 +12,7 @@ pub fn print_program(stmts: &[Stmt]) {
     for stmt in stmts {
         if let Stmt::Label(_) = stmt {
             println!("{}", stmt);
-        }
-        else {
+        } else {
             println!("  {:3}: {}", pos, stmt);
             pos += stmt.length();
         }

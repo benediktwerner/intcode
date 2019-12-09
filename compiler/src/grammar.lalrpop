@@ -30,6 +30,7 @@ Stmt: Stmt = {
 }
 SimpleStmt: Stmt = <InlineStmt> ";";
 InlineStmt: Stmt = {
+    DeclStmt,
     DeclAssignStmt,
     AssignStmt,
     ReturnStmt,

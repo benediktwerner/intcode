@@ -65,6 +65,7 @@ AssignOp: BinOp = {
     "-=" => BinOp::Sub,
     "*=" => BinOp::Mul,
     "/=" => BinOp::Div,
+    "%=" => BinOp::Mod,
 };
 CmpOp: BinOp = {
     "==" => BinOp::Equal,
@@ -81,6 +82,7 @@ AddOp: BinOp = {
 MulOp: BinOp = {
     "*" => BinOp::Mul,
     "/" => BinOp::Div,
+    "%" => BinOp::Mod,
 };
 
 Expr: Expr = {

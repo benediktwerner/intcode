@@ -208,6 +208,7 @@ impl<'a> Gen<'a> {
                     BinOp::Sub => asm::Stmt::Sub,
                     BinOp::Mul => asm::Stmt::Mul,
                     BinOp::Div => asm::Stmt::Div,
+                    BinOp::Mod => asm::Stmt::Mod,
                     BinOp::Equal => asm::Stmt::Equal,
                     BinOp::NotEqual => asm::Stmt::NotEqual,
                     BinOp::LessThan => asm::Stmt::LessThan,
@@ -285,7 +286,7 @@ impl<'a> Gen<'a> {
             Stmt::Assign(ident, expr) => self.gen_expr(expr, self.get_location(ident)?)?,
             Stmt::AssignOp(ident, op, expr) => {
                 let expr = Expr::BinOp(Box::new(Expr::Var(ident)), op, Box::new(expr));
-                self.gen_expr(expr, self.get_location(ident)?);
+                self.gen_expr(expr, self.get_location(ident)?)?;
             }
             Stmt::AssignIndex(ident, index, expr) => {
                 self.gen_expr(expr, Target::StackTop)?;
@@ -434,6 +435,7 @@ impl<'a> Gen<'a> {
                     BinOp::Sub => left - right,
                     BinOp::Mul => left * right,
                     BinOp::Div => left / right,
+                    BinOp::Mod => left % right,
                     BinOp::Equal => bool2int(left == right),
                     BinOp::NotEqual => bool2int(left != right),
                     BinOp::LessThan => bool2int(left < right),
@@ -499,6 +501,7 @@ impl<'a> Gen<'a> {
                 let val = self.const_eval(expr)?;
                 self.consts.insert(*ident, val);
             }
+            Stmt::AssignOp(..) => (),
             Stmt::DeclArray(..) => (),
             Stmt::Assign(..) => (),
             Stmt::AssignIndex(..) => (),

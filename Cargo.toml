@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "vm",
+    "asm",
+    "compiler",
+    "intcode",
+]
+
+default-members = ["intcode"]

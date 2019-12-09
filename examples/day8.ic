@@ -1,4 +1,11 @@
 
+// Input all the numbers/pixels from the input as a seperate line and
+// then any number other than 0, 1 or 2.
+// e.g.: (cat input.txt; echo -ne "1337") | grep -o . | intcode compile day8.int --run
+//
+// The program will then output the result for part 1 and then every pixel for part 2 as
+// a seperate line.
+
 const LAYER_SIZE = 25 * 6;
 
 var fewest_zeros = LAYER_SIZE + 1;
@@ -21,6 +28,7 @@ while has_input {
 
     while index < LAYER_SIZE {
         var x = input();
+        print(x);
         if x == 0 {
             zeros += 1;
         }

@@ -55,6 +55,8 @@ print(x);           // Still zero because the function has its own scope
 print(y);           // Changed to 42
 ```
 
+An extension for syntax highlighting in vscode can be found in [`vscode-syntax-highlighting`](vscode-syntax-highlighting).
+
 ## Assembler
 
 ### Example

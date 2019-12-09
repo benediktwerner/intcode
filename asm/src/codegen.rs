@@ -180,6 +180,42 @@ impl Stmt {
             _ => panic!("Stmt {:?} has no opcode", self),
         }
     }
+
+    pub fn length(&self) -> usize {
+        match self {
+            Self::Label(..) => 0,
+            Self::Add(..) => 4,
+            Self::Mul(..) => 4,
+            Self::In(..) => 2,
+            Self::Out(..) => 2,
+            Self::JumpTrue(..) => 3,
+            Self::JumpFalse(..) => 3,
+            Self::LessThan(..) => 4,
+            Self::Equal(..) => 4,
+            Self::Data(..) => 1,
+            Self::DataArray(_, length) => *length,
+            Self::Halt => 1,
+            Self::AddRelBase(_) => 2,
+            Self::Load(..) => 8,
+            Self::Store(..) => 8,
+            Self::Push(..) => 6,
+            Self::Pop(..) => 6,
+            Self::Call(..) => 13,
+            Self::Ret => 13,
+            Self::Mov(..) => 4,
+            Self::Sub(..) => 8,
+            Self::Div(..) => 38,
+            Self::Mod(..) => 30,
+            Self::DivMod(..) => 38,
+            Self::Jmp(..) => 7,
+            Self::And(..) => 18,
+            Self::Or(..) => 18,
+            Self::Not(..) => 18,
+            Self::LessEqual(..) => 4 + 4 + 18,
+            Self::GreaterThan(..) => 4,
+            Self::GreaterEqual(..) => 4 + 4 + 18,
+        }
+    }
 }
 
 impl std::fmt::Display for Stmt {

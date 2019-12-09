@@ -111,9 +111,7 @@ fn main() {
         };
 
         if print_asm {
-            for stmt in &asm {
-                println!("{}", stmt);
-            }
+            intcode_asm::print_program(&asm);
         }
 
         let code = intcode_asm::assemble(&asm);

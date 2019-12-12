@@ -579,7 +579,7 @@ impl Assembler {
                 [jmp (self ":__loop")],
                 [label self "__end"],
             ),
-            Jmp(a) => assemble!(self, [mov 0 "__tmp"], [jz "__tmp" a]),
+            Jmp(a) => assemble!(self, [jz 0 a]),
             And(a, b, c) => assemble!(self,
                 [jmp_false a (self ":__first")],
                 [mov b c],

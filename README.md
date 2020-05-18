@@ -9,7 +9,7 @@ There are four crates in this project:
 - `intcode`: Wrapper binary for executing the compiler, assembler or VM
 - `vm`: An intcode VM that can run intcode files: `intcode run input.int`
 - `asm`: An intcode assembler that can assemble intcode programs from intcode assembly: `intcode asm input.asm`
-- `compiler`: An intcode compiler that can compile intcode programs from a higher-level language: `intcode compile input.asm`
+- `compiler`: An intcode compiler that can compile intcode programs from a higher-level language: `intcode compile input.ic`
 
 ## Building and Installing
 
@@ -127,7 +127,7 @@ More examples can be found in the `examples` directory.
 |     `store a target`     |            `memory[target] = a`            |                                                         |
 |          `hlt`           |                  `exit()`                  |                      Alias: `halt`                      |
 |         `data x`         |           stores `x` as raw data           |    Accepts multiple arguments, e.g. `data 1 5 13 42`    |
-|     `array val len`      |    stores `val` `len` times as raw data    |    Accepts multiple arguments, e.g. `data 1 5 13 42`    |
+|     `array val len`      |    stores `val` `len` times as raw data    |                                                         |
 |        `push val`        |  `memory[rel_base] = val; rel_base += 1`   |                                                         |
 |       `pop target`       | `rel_base -= 1; target = memory[rel_base]` |                                                         |
 |      `call target`       |                 `push(ip)`                 |                                                         |

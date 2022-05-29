@@ -146,3 +146,9 @@ undeclared labels/variables because they will be put after the program.
 - Value positional: `[42]`
 - Value immediate: `42`
 - Value relative: `%42`
+
+## License
+
+All the code in this repository is in the public domain. Or if you prefer, you may also use it under the [MIT license](LICENSE-MIT) or [CC0 license](LICENSE-CC0).
+
+Note though that some parts of this code use external libraries which have their own licenses.

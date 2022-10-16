@@ -15,12 +15,15 @@ There are four crates in this project:
 
 Building or installing requires a working [Rust Installation](https://www.rust-lang.org/).
 
+Build from source and install:
 ```
+$ git clone https://github.com/benediktwerner/intcode
+$ cd intcode
 $ cargo install --path intcode
 $ intcode
 ```
 
-To build from source:
+To just build from source:
 
 ```
 $ git clone https://github.com/benediktwerner/intcode
